@@ -1,0 +1,24 @@
+{
+  "name": "agent-form-filler",
+  "version": "0.1.0",
+  "description": "Sanitized browser form automation starter kit for agent-assisted workflows.",
+  "type": "module",
+  "private": false,
+  "scripts": {
+    "test": "node --test",
+    "audit:sanitize": "node scripts/audit-sanitization.mjs",
+    "demo": "node src/demo.mjs"
+  },
+  "keywords": [
+    "browser-extension",
+    "form-filler",
+    "automation",
+    "agent",
+    "ocr",
+    "human-in-the-loop"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
