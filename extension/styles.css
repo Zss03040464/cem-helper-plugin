@@ -1,0 +1,37 @@
+#agent-form-filler-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  width: 320px;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111111;
+  font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+}
+
+#agent-form-filler-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96px;
+  margin: 8px 0;
+  font: inherit;
+}
+
+#agent-form-filler-panel button {
+  margin-right: 6px;
+}
+
+#agent-form-filler-panel pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 180px;
+  overflow: auto;
+  background: #f6f6f6;
+  padding: 8px;
+}
