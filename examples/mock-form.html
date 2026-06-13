@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Agent Form Filler Mock Form</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 32px; max-width: 760px; }
+    label { display: block; margin: 12px 0; }
+    input, select { width: 320px; padding: 6px; }
+    .notice { background: #f6f6f6; padding: 12px; border-left: 4px solid #999; }
+  </style>
+</head>
+<body>
+  <h1>Mock Review Form</h1>
+  <p class="notice">This page is synthetic. It contains no production identifiers or real user data.</p>
+
+  <form>
+    <label>
+      Platform
+      <select name="platform">
+        <option value="">Select</option>
+        <option value="platform_a">Platform A</option>
+        <option value="platform_b">Platform B</option>
+      </select>
+    </label>
+
+    <label>
+      Estimated distance (km)
+      <input name="estimated_distance_km" inputmode="decimal">
+    </label>
+
+    <label>
+      Estimated duration (min)
+      <input name="estimated_duration_min" inputmode="numeric">
+    </label>
+
+    <label>
+      Actual paid amount
+      <input name="actual_paid_amount" inputmode="decimal">
+    </label>
+
+    <button type="button">Mock non-submit button</button>
+  </form>
+
+  <h2>Sample evidence</h2>
+  <pre>Platform A receipt
+Estimated distance: 2.4 km
+Estimated duration: 8 min
+Actual paid: 12.50</pre>
+</body>
+</html>
