@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Agent Form Filler Demo",
+  "version": "0.1.0",
+  "description": "Public-safe demo extension for reviewable form field suggestions.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "file:///*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
