@@ -1,86 +1,134 @@
+/*
+ * Content script for Agent Form Filler Demo
+ *
+ * 扫描页面输入元素，调用内置的规则引擎生成填充建议。
+ * 高置信度字段会自动填充；置信度低或已有值的字段会加入审核面板。
+ */
+
 (() => {
-  const PANEL_ID = 'agent-form-filler-panel';
-  const FIELD_THRESHOLD = 0.8;
-
-  if (document.getElementById(PANEL_ID)) return;
-
-  const panel = document.createElement('section');
-  panel.id = PANEL_ID;
-  panel.innerHTML = `
-    <strong>Agent Form Filler</strong>
-    <p>Demo mode. Generates reviewable field suggestions only.</p>
-    <textarea placeholder="Paste sanitized evidence text here"></textarea>
-    <button type="button" data-action="suggest">Suggest fields</button>
-    <button type="button" data-action="clear">Clear</button>
-    <pre aria-live="polite"></pre>
-  `;
-  document.documentElement.appendChild(panel);
-
-  const textarea = panel.querySelector('textarea');
-  const output = panel.querySelector('pre');
-
-  panel.addEventListener('click', event => {
-    const action = event.target?.dataset?.action;
-    if (action === 'clear') {
-      textarea.value = '';
-      output.textContent = '';
-      return;
+  const defaults = {
+    default: {
+      name: '张三',
+      phone: '13800000000',
+      email: 'example@example.com',
+      address: '北京市海淀区某街道100号'
     }
-    if (action === 'suggest') {
-      const candidates = inferCandidates(textarea.value);
-      const result = applyHighConfidenceCandidates(candidates);
-      output.textContent = JSON.stringify(result, null, 2);
-    }
-  });
+  };
 
-  function inferCandidates(text) {
-    const normalized = String(text).replace(/\s+/g, ' ').trim();
-    const candidates = [];
-    const distance = findNumberNear(normalized, ['distance', 'km']);
-    const duration = findNumberNear(normalized, ['duration', 'min']);
-    const paid = findNumberNear(normalized, ['paid', 'total']);
+  const aliases = {
+    name: ['姓名', 'full_name', 'real_name'],
+    phone: ['联系电话', 'phone', 'phone_number', '手机号'],
+    email: ['电子邮件', 'mail', '邮箱', 'e-mail'],
+    address: ['住址', '地址', 'address']
+  };
 
-    if (distance !== null) candidates.push(candidate('estimated_distance_km', distance, 0.82, 'distance keyword'));
-    if (duration !== null) candidates.push(candidate('estimated_duration_min', duration, 0.82, 'duration keyword'));
-    if (paid !== null) candidates.push(candidate('actual_paid_amount', paid, 0.82, 'paid keyword'));
-    if (/platform a/i.test(normalized)) candidates.push(candidate('platform', 'platform_a', 0.7, 'platform marker'));
-    if (/platform b/i.test(normalized)) candidates.push(candidate('platform', 'platform_b', 0.7, 'platform marker'));
-    return candidates;
-  }
-
-  function findNumberNear(text, terms) {
-    for (const term of terms) {
-      const index = text.toLowerCase().indexOf(term.toLowerCase());
-      if (index === -1) continue;
-      const windowText = text.slice(Math.max(0, index - 24), index + 64);
-      const match = windowText.match(/-?\d+(?:\.\d+)?/);
-      if (match) return Number(match[0]);
+  function fuzzyMatch(name) {
+    const lower = (name || '').toLowerCase();
+    for (const key of Object.keys(aliases)) {
+      for (const alias of aliases[key]) {
+        if (lower.includes(alias.toLowerCase())) {
+          return { key, confidence: alias.length / Math.max(lower.length, alias.length) };
+        }
+      }
     }
     return null;
   }
 
-  function candidate(field, value, confidence, reason) {
-    return { field, value, confidence, reason };
+  function getSuggestion(fieldName) {
+    const match = fuzzyMatch(fieldName);
+    if (match && defaults.default[match.key]) {
+      return { value: defaults.default[match.key], confidence: match.confidence };
+    }
+    return { value: null, confidence: 0 };
   }
 
-  function applyHighConfidenceCandidates(candidates) {
-    const filled = [];
-    const review = [];
-    for (const item of candidates) {
-      const input = document.querySelector(`[name="${CSS.escape(item.field)}"], [data-field="${CSS.escape(item.field)}"]`);
-      if (!input || item.confidence < FIELD_THRESHOLD) {
-        review.push(item);
-        continue;
-      }
-      if (input.value && input.value !== String(item.value)) {
-        review.push({ ...item, reason: `${item.reason}; existing value preserved` });
-        continue;
-      }
-      input.value = String(item.value);
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      filled.push(item);
+  function sanitizeValue(value) {
+    return String(value)
+      .replace(/1\d{6}(\d{4})/g, '1380000$1')
+      .replace(/\b\d{14,17}[\dXx]\b/g, '[ID_REDACTED]');
+  }
+
+  function createReviewPanel(items) {
+    const existing = document.getElementById('agent-form-filler-review-panel');
+    if (existing) existing.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'agent-form-filler-review-panel';
+    panel.style.position = 'fixed';
+    panel.style.bottom = '10px';
+    panel.style.right = '10px';
+    panel.style.zIndex = '9999';
+    panel.style.background = '#fff';
+    panel.style.border = '1px solid #ccc';
+    panel.style.padding = '10px';
+    panel.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+    panel.style.font = '14px system-ui, sans-serif';
+    panel.innerHTML = '<strong>Agent Form Filler 待审核字段</strong><br/>';
+
+    for (const { el, suggestion, field, reason } of items) {
+      const row = document.createElement('div');
+      row.style.marginTop = '6px';
+
+      const label = document.createElement('span');
+      label.textContent = `${field}: `;
+
+      const input = document.createElement('input');
+      input.value = suggestion || '';
+      input.title = reason || '';
+      input.style.marginLeft = '5px';
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = '填充';
+      button.style.marginLeft = '5px';
+      button.onclick = () => {
+        el.value = sanitizeValue(input.value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        row.remove();
+      };
+
+      row.append(label, input, button);
+      panel.appendChild(row);
     }
-    return { filled, review, note: 'No save or submit action was performed.' };
+
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = '关闭';
+    closeButton.style.marginTop = '10px';
+    closeButton.onclick = () => panel.remove();
+    panel.appendChild(closeButton);
+    document.body.appendChild(panel);
+  }
+
+  function fieldNameOf(el) {
+    return el.getAttribute('name') || el.getAttribute('id') || el.getAttribute('aria-label') || '';
+  }
+
+  function processForm() {
+    const inputs = Array.from(document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input:not([type])'));
+    const reviewItems = [];
+
+    for (const el of inputs) {
+      const field = fieldNameOf(el);
+      const { value, confidence } = getSuggestion(field);
+      if (!value) continue;
+
+      if (!el.value && confidence > 0.6) {
+        el.value = sanitizeValue(value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        reviewItems.push({ el, suggestion: value, field, reason: el.value ? '已有值，保留并交给人工确认' : '置信度不足' });
+      }
+    }
+
+    if (reviewItems.length) createReviewPanel(reviewItems);
+  }
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(processForm, 500);
+  } else {
+    window.addEventListener('DOMContentLoaded', () => setTimeout(processForm, 500));
   }
 })();
