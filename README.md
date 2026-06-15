@@ -1,68 +1,39 @@
-# Agent Form Filler
+# Agent Form Filler – 深度改进版
 
-A sanitized, public-safe browser form automation starter kit for agent-assisted workflows.
+这是一个脱敏后的表单自动化助手项目，用于示范如何利用规则引擎、安全脱敏和浏览器扩展来填充各种网页表单。本仓库基于早期的示例进行了深度改进，新增模块化规则引擎、模糊匹配、可扩展脱敏策略和更完整的文档。
 
-This repository is a generic version of a private form automation workflow. It intentionally removes all real business names, production URLs, task IDs, screenshots, account data, cookies, OCR raw text, private paths, and operational handoff logs.
+## 特色功能
 
-## What it does
+* **模块化规则引擎**：`src/rules.js` 定义了一个可扩展的规则框架，支持平台分类、字段别名、模糊匹配和置信度打分，可根据表单字段名称、标签和周围文本推断应该填写的内容。
+* **安全脱敏**：通过 `src/sanitizer.js` 定义的脱敏器，屏蔽电话、身份证号、邮箱、地址等敏感模式，在提交之前统一清理数据。附带 `docs/ENHANCEMENTS.md` 中列举的新增模式供参考。
+* **浏览器扩展示例**：`extension` 目录提供一个 MV3 扩展演示，监听页面表单并调用规则引擎生成填充建议。高置信度字段会自动填入，低置信度字段会通过审核面板提示人工确认。
+* **脱敏审计脚本**：在 `scripts` 中新增了 `audit-sanitization.js`，它会读取源目录并检查是否包含禁止提交的敏感关键字，帮助避免意外泄露信息。
+* **单元测试**：`test` 目录使用 Node 的内置断言库编写了示例测试，确保规则引擎和脱敏器的行为符合预期。
 
-Agent Form Filler helps turn image/text evidence into reviewable form field candidates. It is designed for workflows where an automation agent can assist, but a human must still review uncertain fields before any final submission.
+## 快速开始
 
-Core ideas:
+1. 克隆此仓库到本地并安装依赖：
 
-- Browser extension injects a small assistant panel into matching pages.
-- Rule engine maps extracted evidence to form field candidates.
-- Low-confidence or conflicting candidates are left empty and reported.
-- The tool does not click submit, save, approve, reject, or destructive buttons.
-- Sensitive runtime data stays outside the repository.
+   ```bash
+   git clone <your-fork-url> agent-form-filler
+   cd agent-form-filler
+   npm install
+   ```
 
-## Public-safe scope
+2. 运行测试确保一切正常：
 
-This repository contains only generic examples:
+   ```bash
+   npm test
+   ```
 
-- Mock HTML form under `examples/`.
-- Generic field names such as `estimated_distance_km`, `estimated_duration_min`, and `actual_paid_amount`.
-- Placeholder platforms such as `platform_a` and `platform_b`.
-- A sanitization audit script that rejects obvious secrets, real URLs, local private paths, cookies, and known private workflow terms.
+3. 在浏览器中加载 `extension` 作为开发者扩展，打开 `examples/mock-form.html` 页面，查看自动填充效果。
 
-It does not contain:
+4. 修改 `src/rules.js` 和 `src/sanitizer.js` 以适配你的业务场景，然后运行 `npm run audit` 以确保没有敏感信息。
 
-- Production website names or URLs.
-- Real screenshots, OCR text, task IDs, order IDs, phone numbers, addresses, vehicle plates, driver names, cookies, or credentials.
-- Private agent conversation files such as `对话.md`, `AGENTS.md`, local session logs, or project-specific rule archives.
+## 提交注意
 
-## Repository layout
+此仓库为公共仓库，严禁提交任何生产环境的 URL、账号信息、Cookie、真实用户数据、订单 ID、任务 ID、身份证号、电话号码、私钥或其它敏感内容。如需添加示例，请使用 `examples/mock-form.html` 中的虚拟表单并生成虚构数据。
 
-```text
-.
-├── extension/                 # Minimal MV3 browser extension
-├── src/                       # Generic rule engine and sanitizer
-├── scripts/                   # Public-safety audit scripts
-├── examples/                  # Mock pages and sample payloads
-├── docs/                      # Runbook and sanitization policy
-├── package.json
-└── README.md
-```
+## 许可证
 
-## Quick start
-
-```bash
-npm install
-npm test
-npm run audit:sanitize
-```
-
-Load the extension during development:
-
-1. Open `chrome://extensions`.
-2. Enable Developer Mode.
-3. Load the `extension/` directory.
-4. Open `examples/mock-form.html` locally or serve the repo with any static server.
-
-## Design boundary
-
-This project is intentionally conservative. It assists with field suggestions, but it does not make final business decisions. A real deployment should keep private adapters, production selectors, screenshots, and business-specific rule files in a private repository.
-
-## Agent handoff rule
-
-Agents working on this repository must preserve public-safety boundaries. Do not add real URLs, real screenshots, cookies, credentials, private local paths, production task identifiers, or private conversation logs. Run `npm run audit:sanitize` before committing.
+本项目采用 MIT 许可证，详情请见 `LICENSE` 文件。
