@@ -1,54 +1,49 @@
-# Runbook
+# 运行手册
 
-## Local development
+此文档提供了如何在本地开发和测试此项目的步骤。
+
+## 安装
 
 ```bash
+git clone <your-fork-url> agent-form-filler
+cd agent-form-filler
 npm install
-npm test
-npm run demo
-npm run audit:sanitize
 ```
 
-## Browser extension demo
+## 单元测试
 
-1. Open `chrome://extensions`.
-2. Enable Developer Mode.
-3. Load the `extension/` folder.
-4. Open `examples/mock-form.html`.
-5. Paste the sample evidence text into the panel.
-6. Click `Suggest fields`.
+运行所有测试确保核心功能正常工作：
 
-The demo fills only high-confidence fields and prints all other candidates for review. It does not submit or save the form.
+```bash
+npm test
+```
 
-## Human-in-the-loop workflow
+## 脱敏审计
 
-Recommended production pattern:
+在每次提交前运行以下命令检查代码中是否包含禁止提交的敏感信息：
 
-1. Collect evidence from an allowed source.
-2. Convert evidence into normalized text or structured observations.
-3. Run generic extraction and business-specific private rules.
-4. Fill only high-confidence fields.
-5. Leave conflicts and low-confidence values unchanged.
-6. Produce an exception report.
-7. Require human review before final submission.
+```bash
+npm run audit
+```
 
-## Safety defaults
+如果输出包含 `[WARNING]`，请根据提示检查并移除相关内容。
 
-- No automatic submit.
-- No destructive action.
-- No credential handling in the browser extension.
-- No production URL in public code.
-- No raw screenshot or OCR archival in public examples.
-- No private handoff logs in public documentation.
+## 加载浏览器扩展
 
-## Extending privately
+1. 打开浏览器开发者模式，例如 Chrome 的 `chrome://extensions` 页面。
+2. 选择“加载已解压的扩展程序”，指向 `extension` 目录。
+3. 打开 `examples/mock-form.html` 文件，即可在扩展的作用下观察自动填表和审核面板。
 
-A private adapter can import the generic rule interfaces and provide:
+## 开发新功能
 
-- Site-specific selectors.
-- OCR pipeline.
-- Field mappings.
-- Platform-specific evidence handling.
-- Report storage policy.
+你可以修改 `src/rules.js` 增加更多平台和字段规则，或修改 `src/sanitizer.js` 添加新的脱敏模式。修改后运行测试和审计脚本确保正确。
 
-Keep those files out of this repository unless they are fully synthetic.
+## 发布流程
+
+当准备发布新版本时：
+
+1. 确认所有敏感信息已被移除，并通过 `npm run audit` 验证。
+2. 更新 `package.json` 中的 `version` 字段。
+3. 更新 `CHANGELOG.md`（如果存在）。
+4. 提交到新的分支并推送到你的仓库。
+5. 在 GitHub 上创建 Pull Request，供其他维护者审核。
